@@ -30,13 +30,11 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
         if request.method == 'GET':
-            
             post = get_object_or_404(Post, pk=pk)
             serializers = PostSerializer(data=post)
             if serializers.is_valid():
-                return Response(data=serializers.data, status=status.HTTP_200_OK)
-
-
+                return Response(
+                    data=serializers.data, status=status.HTTP_200_OK)
 
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
@@ -47,9 +45,8 @@ class PostViewSet(viewsets.ModelViewSet):
         if instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')
         if not self.request.user.is_authenticated:
-           return Response(status=status.HTTP_204_NO_CONTENT) 
+            return Response(status=status.HTTP_204_NO_CONTENT)
         return super().perform_destroy(instance)
-
 
     @action(
         methods=['get'], detail=True, permission_classes=[IsAuthenticated]
@@ -65,10 +62,11 @@ class PostViewSet(viewsets.ModelViewSet):
             serializer = CommentSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+                return Response(
+                    data=serializer.data, status=status.HTTP_201_CREATED)
             else:
-                return Response(data=serializer.error, status=status.HTTP_400_BAD_REQUEST)
-   
+                return Response(
+                    data=serializer.error, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -77,7 +75,8 @@ class GroupViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
 
-        return Response(request.data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(
+            request.data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class CommentiewSet(viewsets.ModelViewSet):
@@ -87,25 +86,26 @@ class CommentiewSet(viewsets.ModelViewSet):
     def retrieve(self, request, comment_id=None, post_id=None):
         post = get_object_or_404(Post, pk=post_id)
         comment = Comment.objects.filter(post=post).filter(pk=comment_id)
+        serializers = CommentSerializer(data=comment)
+        if serializers.is_valid():
+            return Response(serializers.data)
 
-    def perform_update(self, serializer,  post_id, comment_id):
+    def perform_update(self, serializer, post_id, comment_id):
         post = get_object_or_404(Post, pk=post_id)
-        comment = Comment.objects.filter(post=post).filter(pk=comment_id)        
+        comment = Comment.objects.filter(post=post).filter(pk=comment_id)
         if request.method == 'PUT' or request.method == 'PATCH':
-            serializer = CommentSerializer(comment, data=request.data, partial=True)
+            serializer = CommentSerializer(
+                comment, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return super().perform_update(serializer)
 
-    def delete(self, request, post_id, comment_id):        
+    def delete(self, request, post_id, comment_id):
         post = get_object_or_404(Post, pk=post_id)
         comment = Comment.objects.filter(post=post).filter(pk=comment_id)
         if self.request.method == 'DELETE':
             comment.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-
-        

@@ -10,7 +10,7 @@ router = SimpleRouter()
 # Вызываем метод .register с нужными параметрами
 router.register('api/v1/posts', PostViewSet)
 router.register('api/v1/groups', GroupViewSet)
-router.register('api/v1/posts/<post_id>/comments/<comment_id>/', CommentiewSet)
+router.register('api/v1/posts/<post_id>/comments/<comment_id>', CommentiewSet)
 
 
 # В роутере можно зарегистрировать любое количество пар "URL, viewset":

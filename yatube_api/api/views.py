@@ -48,7 +48,7 @@ class PostViewSet(viewsets.ModelViewSet):
         return super().perform_destroy(instance)
 
     @action(
-        methods=['get'], detail=True, permission_classes=[IsAuthenticated]
+        methods=['get', 'post'], detail=True, permission_classes=[IsAuthenticated]
     )
     def comments(self, request, pk=None):
         post = get_object_or_404(Post, id=pk)
@@ -58,14 +58,17 @@ class PostViewSet(viewsets.ModelViewSet):
             serializer = CommentSerializer(comments, many=True)
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         elif request.method == 'POST':
-            serializer = CommentSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                    data=serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(
-                    data=serializer.error, status=status.HTTP_400_BAD_REQUEST)
+            if self.request.user.is_authenticated:
+                
+                serializer = CommentSerializer(data=self.request.data)
+                if serializer.is_valid():
+                    serializer.validated_data
+                    serializer.save(author=self.request.user)
+                    return Response(
+                        data=serializer.data, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -82,29 +85,22 @@ class CommentiewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = GroupSerializer
 
-    def retrieve(self, request, comment_id=None, post_id=None):
-        post = get_object_or_404(Post, pk=post_id)
-        comment = Comment.objects.filter(post=post).filter(pk=comment_id)
-        serializers = CommentSerializer(data=comment)
-        if serializers.is_valid():
-            return Response(serializers.data)
-
-    def perform_update(self, serializer, post_id, comment_id):
-        post = get_object_or_404(Post, pk=post_id)
-        comment = Comment.objects.filter(post=post).filter(pk=comment_id)
-        if request.method == 'PUT' or request.method == 'PATCH':
-            serializer = CommentSerializer(
-                comment, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return super().perform_update(serializer)
-
-    def delete(self, request, post_id, comment_id):
-        post = get_object_or_404(Post, pk=post_id)
-        comment = Comment.objects.filter(post=post).filter(pk=comment_id)
+    def retrieve(self, request, pk=None, id=None):
+        queryset = Post.objects.all()
+        post = get_object_or_404(queryset, pk=pk)
+        comment = post.comments.filter(pk=id)
+        serializer = CommentSerializer(comment)
+        return Response(serializer.data)
+    
+    def perform_destroy(self, instance, pk=None, id=None):
         if self.request.method == 'DELETE':
-            comment.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+
+            if self.request.user.is_authenticated:
+                instance.delete()
+            else: 
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().perform_destroy(instance)
+
+    def create(self, request, *args, **kwargs):
+        
+        return super().create(request, *args, **kwargs)

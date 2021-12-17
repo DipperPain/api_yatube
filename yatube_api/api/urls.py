@@ -3,14 +3,15 @@ from rest_framework.authtoken import views
 
 from django.urls import include, path
 
-from .views import PostViewSet, GroupViewSet, CommentiewSet
+from .views import PostViewSet, GroupViewSet, CommentViewSet
 
 # Создаётся роутер
 router = SimpleRouter()
 # Вызываем метод .register с нужными параметрами
 router.register('api/v1/posts', PostViewSet)
+router.register('api/v1/posts/<post_id>/comments', PostViewSet)
 router.register('api/v1/groups', GroupViewSet)
-router.register('api/v1/posts/<post_id>/comments/<comment_id>', CommentiewSet)
+router.register('api/v1/posts/<post_id>/comments/<comment_id>', CommentViewSet)
 
 
 # В роутере можно зарегистрировать любое количество пар "URL, viewset":

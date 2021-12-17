@@ -23,8 +23,8 @@ class PostViewSet(viewsets.ModelViewSet):
     def create(self, request):
         serializer = PostSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
+        serializer.save(author=self.request.user)
+        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
     def list(self, request):
         serializer = PostSerializer(data=self.queryset, many=True)
@@ -71,7 +71,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
-
+    
+    def retrieve(self, request, post_id=None, comment_id=None):
+        post = get_object_or_404(Post, id=post_id)
+        comment = post.comments.filter(id=comment_id)
+        serializer = CommentSerializer(data=comment)
+        serializer.is_valid(raise_exception=True)
+        return Response(status=status.HTTP_200_OK)
+    
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')

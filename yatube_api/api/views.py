@@ -70,27 +70,37 @@ class PostViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
-        queryset = post.comments.all()
-        return queryset
+        return post.comments.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        if self.request.method == 'GET':
+            comments = self.get_queryset()
+            comment = comments.get(id=self.kwargs.get('comment_id'))
+            serializer = CommentSerializer(data=comment)
+            serializer.is_valid(raise_exception=True)
+            return Response(data=serializer.data)
+        return super().retrieve(request, *args, **kwargs)
+
+    def perform_destroy(self, instance):
+        if instance.author != self.request.user:
+            raise PermissionDenied('Изменение чужого контента запрещено!')
+        if not self.request.user.is_authenticated:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().perform_destroy(instance)
+
+    def perform_update(self, serializer):
+        if serializer.instance.author != self.request.user:
+            raise PermissionDenied('Изменение чужого контента запрещено!')
+        return super().perform_update(serializer)
 
     def perform_create(self, serializer):
         post_id = self.kwargs.get('post_id')
         post = Post.objects.get(pk=post_id)
         serializer.save(author=self.request.user, post=post)
-
-    def retrive(self, request):
-        if self.request.method == 'GET':
-
-            queryset = self.get_queryset()
-            comment = queryset.get(pk=self.kwargs.get('comment_id'))
-            serializer = PostSerializer(data=comment)
-            serializer.is_valid(raise_exception=True)
-            return Response(data=serializer.data)
 
 
 class GroupViewSet(viewsets.ModelViewSet):

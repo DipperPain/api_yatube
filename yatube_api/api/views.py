@@ -35,7 +35,7 @@ class PostViewSet(viewsets.ModelViewSet):
         post_id = self.kwargs.get('post_id')
         post = Post.objects.get(pk=post_id)
         serializer = PostSerializer(data=post)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid()
         return Response(data=serializer.data)
 
     def perform_update(self, serializer):
@@ -81,7 +81,6 @@ class CommentViewSet(viewsets.ModelViewSet):
             comments = self.get_queryset()
             comment = comments.get(id=self.kwargs.get('comment_id'))
             serializer = CommentSerializer(data=comment)
-            serializer.is_valid(raise_exception=True)
             return Response(data=serializer.data)
         return super().retrieve(request, *args, **kwargs)
 
@@ -95,6 +94,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')
+        if self.request.user.is_authenticated:
+            return Response(status=status.HTTP_200_OK)
         return super().perform_update(serializer)
 
     def perform_create(self, serializer):

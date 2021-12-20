@@ -9,15 +9,11 @@ from .views import PostViewSet, GroupViewSet, CommentViewSet
 router = SimpleRouter()
 # Вызываем метод .register с нужными параметрами
 router.register('api/v1/posts', PostViewSet)
-router.register('api/v1/posts/<post_id>/comments', PostViewSet)
+
+router.register(r'api/v1/posts/(?P<post_id>\d+)/comments/(?P<comment_id>\d+)',
+                CommentViewSet, basename='Comment')
+
 router.register('api/v1/groups', GroupViewSet)
-router.register('api/v1/posts/<post_id>/comments/<comment_id>', CommentViewSet)
-
-
-# В роутере можно зарегистрировать любое количество пар "URL, viewset":
-# например
-# router.register('owners', OwnerViewSet)
-# Но нам это пока не нужно
 
 urlpatterns = [
     # Все зарегистрированные в router пути доступны в router.urls

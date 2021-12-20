@@ -1,6 +1,5 @@
-
-from django.http import request
-from rest_framework import serializers, viewsets
+from django.db.models import query
+from rest_framework import viewsets
 from rest_framework.response import Response
 
 from django.shortcuts import get_object_or_404
@@ -12,7 +11,7 @@ from .serializers import CommentSerializer, PostSerializer, GroupSerializer
 
 from rest_framework.permissions import IsAuthenticated
 
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -20,30 +19,30 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
 
+    def list(self, request):
+        if request.method == 'GET':
+            serializer = PostSerializer(data=Post.objects.all(), many=True)
+            serializer.is_valid()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+
     def create(self, request):
         serializer = PostSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
-    def list(self, request):
-        serializer = PostSerializer(data=self.queryset, many=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(author=self.request.user)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
-
     def retrive(self, request, pk=None):
-        if request.method == 'GET':
-            post = get_object_or_404(Post, id=pk)
-            serializer = PostSerializer(data=post)
-            serializer.is_valid(raise_exception=True)
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-    
+        post_id = self.kwargs.get('post_id')
+        post = Post.objects.get(pk=post_id)
+        serializer = PostSerializer(data=post)
+        serializer.is_valid(raise_exception=True)
+        return Response(data=serializer.data)
+
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')
         return super().perform_update(serializer)
-    
+
     def perform_destroy(self, instance):
         if instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')
@@ -67,29 +66,31 @@ class PostViewSet(viewsets.ModelViewSet):
             return Response(data=serializer.data,
                             status=status.HTTP_201_CREATED)
 
+
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
+
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
-    
-    def retrieve(self, request, post_id=None, comment_id=None):
+
+    def get_queryset(self):
+        post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
-        comment = post.comments.filter(id=comment_id)
-        serializer = CommentSerializer(data=comment)
-        serializer.is_valid(raise_exception=True)
-        return Response(status=status.HTTP_200_OK)
-    
-    def perform_update(self, serializer):
-        if serializer.instance.author != self.request.user:
-            raise PermissionDenied('Изменение чужого контента запрещено!')
-        return super().perform_update(serializer)
-    
-    def perform_destroy(self, instance):
-        if instance.author != self.request.user:
-            raise PermissionDenied('Изменение чужого контента запрещено!')
-        if not self.request.user.is_authenticated:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return super().perform_destroy(instance)
+        queryset = post.comments.all()
+        return queryset
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs.get('post_id')
+        post = Post.objects.get(pk=post_id)
+        serializer.save(author=self.request.user, post=post)
+
+    def retrive(self, request):
+        if self.request.method == 'GET':
+
+            queryset = self.get_queryset()
+            comment = queryset.get(pk=self.kwargs.get('comment_id'))
+            serializer = PostSerializer(data=comment)
+            serializer.is_valid(raise_exception=True)
+            return Response(data=serializer.data)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -99,3 +100,17 @@ class GroupViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def list(self, request):
+        if request.method == 'GET':
+            groups = Group.objects.all()
+            serializer = GroupSerializer(data=groups, many=True)
+            serializer.is_valid()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, pk=None):
+        group = get_object_or_404(Group, id=pk)
+        posts = group.posts.all()
+        serializer = PostSerializer(data=posts, many=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

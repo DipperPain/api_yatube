@@ -10,7 +10,8 @@ router = routers.SimpleRouter()
 router.register(r'api/v1/posts', PostViewSet)
 router.register(r'api/v1/groups', GroupViewSet)
 
-posts_router = routers.NestedSimpleRouter(router, r'api/v1/posts', lookup='post')
+posts_router = routers.NestedSimpleRouter(
+    router, r'api/v1/posts', lookup='post')
 posts_router.register(r'comments', CommentViewSet, basename='post-comments')
 
 

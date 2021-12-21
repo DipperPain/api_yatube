@@ -31,7 +31,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
-    def retrive(self, request, pk=None):
+    def retrive(self, request):
         post_id = self.kwargs.get('post_id')
         post = Post.objects.get(pk=post_id)
         serializer = PostSerializer(data=post)
@@ -72,17 +72,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        post_id = self.kwargs.get('post_id')
+        post_id = self.kwargs.get('post_pk')
         post = get_object_or_404(Post, id=post_id)
         return post.comments.all()
-
-    def retrieve(self, request, *args, **kwargs):
-        if self.request.method == 'GET':
-            comments = self.get_queryset()
-            comment = comments.get(id=self.kwargs.get('comment_id'))
-            serializer = CommentSerializer(data=comment)
-            return Response(data=serializer.data)
-        return super().retrieve(request, *args, **kwargs)
 
     def perform_destroy(self, instance):
         if instance.author != self.request.user:
@@ -94,8 +86,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')
-        if self.request.user.is_authenticated:
-            return Response(status=status.HTTP_200_OK)
         return super().perform_update(serializer)
 
     def perform_create(self, serializer):

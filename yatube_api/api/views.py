@@ -61,8 +61,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         return super().perform_update(serializer)
 
 
-
-
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer

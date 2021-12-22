@@ -5,7 +5,7 @@ from posts.models import Post, Group, Comment
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.CharField(max_length=256)
+    author = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Post

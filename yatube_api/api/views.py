@@ -11,8 +11,6 @@ from .serializers import CommentSerializer, PostSerializer, GroupSerializer
 from rest_framework.permissions import IsAuthenticated
 
 
-
-
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer

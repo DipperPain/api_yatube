@@ -19,13 +19,6 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def retrive(self, request):
-        post_id = self.kwargs.get('post_id')
-        post = Post.objects.get(pk=post_id)
-        serializer = PostSerializer(data=post)
-        serializer.is_valid()
-        return Response(data=serializer.data)
-
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied('Изменение чужого контента запрещено!')
@@ -43,7 +36,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = get_object_or_404(Post, id=self.kwargs.get('post_pk'))
+        serializer.save(author=self.request.user, post=post)
 
     def get_queryset(self):
         post_id = self.kwargs.get('post_pk')
